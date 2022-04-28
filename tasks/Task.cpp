@@ -119,6 +119,13 @@ void Task::sendPointcloud()
 	{
 		result.points.push_back(odometry2body * (*it));
 	}
+    if (mPointcloud.colors.size() > 0)
+    {
+        result.colors = mPointcloud.colors;
+    } else {
+        std::cout << "DEBUG: Apparently the pointcloud has no colors" << std::endl;
+    }
+
 	result.time = mLastScanTime;
 	_pointcloud.write(result);
 	mPointcloud.points.clear();
@@ -142,6 +149,8 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const base::sam
     	try
     	{
     		_laser2odometry.get(ts, laser2odometry, true);
+            std::cout << "DEBUG: translation laser2odometry: " << laser2odometry.translation() << std::endl;
+            std::cout << "DEBUG: rotation laser2odometry: " << laser2odometry.rotation() << std::endl;
     	}catch(std::exception &e)
     	{
     		LOG_ERROR("%s", e.what());
@@ -181,17 +190,18 @@ void Task::pointcloud_samplesTransformerCallback(const base::Time &ts, const bas
     	try
     	{
     		_laser2odometry.get(ts, laser2odometry, true);
+            std::cout << "DEBUG: translation laser2odometry: " << laser2odometry.translation() << std::endl;
+            std::cout << "DEBUG: rotation laser2odometry: " << laser2odometry.rotation() << std::endl;
     	}catch(std::exception &e)
     	{
     		LOG_ERROR("%s", e.what());
     		return;
     	}
     	
-        //TODO implement check in callbacks to verify that only selected input mode is supported. Warn else
     	// Transform points to common frame and add to global cloud
-    	for(unsigned int i = 0; i <= pointcloud.points.size(); i++)
-        //pointcloud.points::iterator it = pointcloud.points.begin(); it < pointcloud.points.end(); ++it)
+    	for(unsigned int i = 0; i < pointcloud.points.size(); i++)
     	{
+            //TODO check this method
     		mPointcloud.points.push_back(laser2odometry * pointcloud.points[i]);
     		mPointcloud.colors.push_back(pointcloud.colors[i]);
     	}
