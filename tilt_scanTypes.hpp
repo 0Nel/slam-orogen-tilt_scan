@@ -10,6 +10,7 @@ namespace tilt_scan
 	{
 		Configuration()
 		: mode(CONTINUOUS_SWEEPING),
+        input(USE_LASERSCANS),
 		max_lines(200),
 		sweep_angle_min(-1.0),
 		sweep_angle_max(1.0),
@@ -23,8 +24,16 @@ namespace tilt_scan
 			TRIGGERED_SWEEPING,
 		};
 
+        enum Input {
+            USE_LASERSCANS,
+            USE_POINTCLOUDS
+        };
+
 		/** current mode */
 		Mode mode;
+
+        /** current input **/
+        Input input;
 
 		/** maximum number of lines until the scan is considered complete */
 		int max_lines;

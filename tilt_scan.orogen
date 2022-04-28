@@ -9,6 +9,12 @@ task_context "Task" do
 	.needs_reliable_connection
 	.doc("Timestamped laser scans from line scanner.")
 
+	input_port('pointcloud_samples', '/base/samples/Pointcloud')
+	.needs_reliable_connection
+	.doc("Timestamped pointclouds.")
+
+	port_driven
+
 	input_port('tilt_status_samples', 'base/samples/Joints')
 	.doc("Status feedback from tilt actuator.")
 
@@ -34,8 +40,8 @@ task_context "Task" do
 		transformation("odometry", "body")
 
 		align_port("scan_samples", 0.02)
+		align_port("pointcloud_samples", 0.02)
 	end
 
-	port_driven("scan_samples")
 	needs_configuration
 end

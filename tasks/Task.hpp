@@ -16,6 +16,7 @@ namespace tilt_scan
 
 		// Callbacks
 		virtual void scan_samplesTransformerCallback(const base::Time &ts, const base::samples::LaserScan &scan);
+		virtual void pointcloud_samplesTransformerCallback(const base::Time &ts, const base::samples::Pointcloud &pointcloud);
 		virtual void trigger_sweep();
 
 		// Internal methods

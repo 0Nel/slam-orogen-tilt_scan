@@ -127,35 +127,81 @@ void Task::sendPointcloud()
 
 void Task::scan_samplesTransformerCallback(const base::Time &ts, const base::samples::LaserScan &scan)
 {
-	// Do nothing if sweeping is inactive
-	if(mSweepStatus.curState == SweepStatus::NOT_SWEEPING)
-	{
-		return;
-	}
-	
-	// Get pose of the laser in odometry frame
-	mLastScanTime = ts;
-	Eigen::Affine3d laser2odometry;
-	try
-	{
-		_laser2odometry.get(ts, laser2odometry, true);
-	}catch(std::exception &e)
-	{
-		LOG_ERROR("%s", e.what());
-		return;
-	}
-	
-	// Convert to pointcloud and add to global cloud
-	PointVector points;
-	scan.convertScanToPointCloud(points, laser2odometry);
-	for(PointVector::iterator it = points.begin(); it < points.end(); ++it)
-	{
-		mPointcloud.points.push_back(*it);
-	}
-	
-	// Check sweep and update status
-	checkTiltStatus();
-	_sweep_status.write(mSweepStatus);
+    // verify input mode
+    if(mConfiguration.input == Configuration::USE_LASERSCANS)
+    {
+    	// Do nothing if sweeping is inactive
+    	if(mSweepStatus.curState == SweepStatus::NOT_SWEEPING)
+    	{
+    		return;
+    	}
+    	
+    	// Get pose of the laser in odometry frame
+    	mLastScanTime = ts;
+    	Eigen::Affine3d laser2odometry;
+    	try
+    	{
+    		_laser2odometry.get(ts, laser2odometry, true);
+    	}catch(std::exception &e)
+    	{
+    		LOG_ERROR("%s", e.what());
+    		return;
+    	}
+    	
+    	// Convert to pointcloud and add to global cloud
+    	PointVector points;
+    	scan.convertScanToPointCloud(points, laser2odometry);
+    	for(PointVector::iterator it = points.begin(); it < points.end(); ++it)
+    	{
+    		mPointcloud.points.push_back(*it);
+    	}
+    	
+    	// Check sweep and update status
+    	checkTiltStatus();
+    	_sweep_status.write(mSweepStatus);
+    } else {
+        LOG_WARN("Received LaserScan, but input mode is configured to process Pointclouds");
+    }
+}
+
+void Task::pointcloud_samplesTransformerCallback(const base::Time &ts, const base::samples::Pointcloud &pointcloud)
+{
+    // verify input mode
+    if(mConfiguration.input == Configuration::USE_POINTCLOUDS)
+    {
+    	// Do nothing if sweeping is inactive
+    	if(mSweepStatus.curState == SweepStatus::NOT_SWEEPING)
+    	{
+    		return;
+    	}
+    	
+    	// Get pose of the laser in odometry frame
+    	mLastScanTime = ts;
+    	Eigen::Affine3d laser2odometry;
+    	try
+    	{
+    		_laser2odometry.get(ts, laser2odometry, true);
+    	}catch(std::exception &e)
+    	{
+    		LOG_ERROR("%s", e.what());
+    		return;
+    	}
+    	
+        //TODO implement check in callbacks to verify that only selected input mode is supported. Warn else
+    	// Transform points to common frame and add to global cloud
+    	for(unsigned int i = 0; i <= pointcloud.points.size(); i++)
+        //pointcloud.points::iterator it = pointcloud.points.begin(); it < pointcloud.points.end(); ++it)
+    	{
+    		mPointcloud.points.push_back(laser2odometry * pointcloud.points[i]);
+    		mPointcloud.colors.push_back(pointcloud.colors[i]);
+    	}
+    	
+    	// Check sweep and update status
+    	checkTiltStatus();
+    	_sweep_status.write(mSweepStatus);
+    } else {
+        LOG_WARN("Received Pointcloud, but input mode is configured to process LaserScans");
+    }
 }
 
 bool Task::configureHook()
